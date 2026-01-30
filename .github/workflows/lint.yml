@@ -15,7 +15,7 @@ jobs:
         with: 
           python-version: '3.11'
       - name: Install python linters
-        run: pip install black pytlint
+        run: pip install black pylint
 
       - name: Run black
         run: black .

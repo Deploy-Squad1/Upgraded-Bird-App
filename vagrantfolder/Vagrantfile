@@ -14,17 +14,7 @@ Vagrant.configure("2") do |config|
     config.vm.define hostname do |node|
       node.vm.box = machine[:box]
       node.vm.hostname = hostname
-      node.vm.network :public_network, ip: machine[:ip]
-      
-      # node.vm.provision "file", source: "netplan-config.yaml", destination: "/tmp/netplan-config.yaml"
-      # node.vm.provision "shell", inline: <<-SHELL
-      #   sed -i 's/STATIC_IP/#{machine[:ip]}/g' /tmp/netplan-config.yaml
-      #   sudo rm -f /etc/netplan/01-netcfg.yaml
-      #   sudo mv /tmp/netplan-config.yaml /etc/netplan/99-vagrant.yaml
-      #   sudo chmod 600 /etc/netplan/99-vagrant.yaml
-      #   sudo netplan apply
-      #   sudo systemctl restart systemd-networkd
-      # SHELL
+      node.vm.network :public_network, ip: machine[:ip], bridge: "enp0s9"
       
       machine[:ports].each do |host_port, guest_port|
         node.vm.network "forwarded_port", guest: guest_port, host: host_port, id: "ssh"
@@ -36,11 +26,6 @@ Vagrant.configure("2") do |config|
         vb.cpus = 2
       end
 
-      node.vm.provider :utm do |utm|
-        utm.name = "vagrant-#{hostname}"
-        utm.memory = 2048
-        utm.cpus = 2
-      end
     end
   end
 end

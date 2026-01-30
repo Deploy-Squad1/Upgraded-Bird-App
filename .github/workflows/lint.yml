@@ -14,11 +14,8 @@ jobs:
         uses: actions/setup-python@v5
         with: 
           python-version: '3.11'
-      - name: Install python linters
-        run: pip install black pylint
-
-      - name: Run black
-        run: black .
+      - name: Install python linter
+        run: pip install pylint
       - name: Run pylint
         run: |
           files=$(find . -name "*.py")
@@ -27,17 +24,22 @@ jobs:
           else
             echo "No Python files found."
           fi
-
-      - name: Install yaml linters
-        run: |
-          npm install -g prettier
-          pip install yamllint
-      - name: Format yaml
-        run: prettier --write "**/*.yml" "**/*.yaml"
+      - name: Install yaml linter
+        run: pip install yamllint
       - name: Lint yaml
-        run: yamllint .
-
+        run: |
+          files=$(find . -name "*.yml" -o -name "*.yaml")
+          if [ -n "$files" ]; then
+            yamllint $files
+          else
+            echo "No yaml files found."
+          fi
       - name: Install Groovy linter
         run: npm install -g npm-groovy-lint
       - name: Lint Groovy(Jenkinsfile)
-        run: npm-groovy-lint Jenkinsfile
+        run: |
+          if [ -f "Jenkinsfile" ]; then
+            npm-groovy-lint Jenkinsfile
+          else
+            echo "No Jenkinsfile found."
+          fi

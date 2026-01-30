@@ -1,0 +1,46 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+SERVICES = {
+  'lb' => { ip: '192.168.0.10', ports: { 22000 => 22 }, box: "bento/ubuntu-24.04" },
+  'app1' => { ip: '192.168.0.11', ports: { 22001 => 22 }, box: "bento/ubuntu-24.04" },
+  'app2' => { ip: '192.168.0.12', ports: { 22002 => 22 }, box: "bento/ubuntu-24.04" },
+  'database' => { ip: '192.168.0.13', ports: { 22003 => 22 }, box: "bento/ubuntu-24.04" },
+  'consul' => { ip: '192.168.0.14', ports: { 22004 => 22 }, box: "bento/ubuntu-24.04" }
+}
+
+Vagrant.configure("2") do |config|
+  SERVICES.each do |hostname, machine|
+    config.vm.define hostname do |node|
+      node.vm.box = machine[:box]
+      node.vm.hostname = hostname
+      node.vm.network :public_network, ip: machine[:ip]
+      
+      # node.vm.provision "file", source: "netplan-config.yaml", destination: "/tmp/netplan-config.yaml"
+      # node.vm.provision "shell", inline: <<-SHELL
+      #   sed -i 's/STATIC_IP/#{machine[:ip]}/g' /tmp/netplan-config.yaml
+      #   sudo rm -f /etc/netplan/01-netcfg.yaml
+      #   sudo mv /tmp/netplan-config.yaml /etc/netplan/99-vagrant.yaml
+      #   sudo chmod 600 /etc/netplan/99-vagrant.yaml
+      #   sudo netplan apply
+      #   sudo systemctl restart systemd-networkd
+      # SHELL
+      
+      machine[:ports].each do |host_port, guest_port|
+        node.vm.network "forwarded_port", guest: guest_port, host: host_port, id: "ssh"
+      end
+
+      node.vm.provider :virtualbox do |vb|
+        vb.name = "vagrant-#{hostname}"
+        vb.memory = "2048"
+        vb.cpus = 2
+      end
+
+      node.vm.provider :utm do |utm|
+        utm.name = "vagrant-#{hostname}"
+        utm.memory = 2048
+        utm.cpus = 2
+      end
+    end
+  end
+end

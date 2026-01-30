@@ -1,16 +1,18 @@
+---
 name: Linters
 
 on:
   pull_request:
   push:
-    branches: '*'
+    branches:
+      - '*'
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
-      - name: Set up Python
+        uses: actions/checkout@v5
+      - name: Set up python
         uses: actions/setup-python@v5
         with: 
           python-version: '3.11'

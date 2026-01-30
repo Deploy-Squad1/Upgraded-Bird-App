@@ -1,0 +1,39 @@
+name: Linters
+
+on:
+  pull_request:
+  push:
+    branches: '*'
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with: 
+          python-version: '3.11'
+      - name: Install python linters
+        run: pip install black pytlint
+
+      - name: Run black
+        run: black .
+      - name: Run pylint
+        run: pylint $(find . -name "*.py")
+
+      - name: Install yaml linters
+        run: |
+          sudo apt update
+          sudo apt install -y nodejs npm
+          npm install -g prettier
+          pip install yamllint
+      - name: Format yaml
+        run: prettier --write "**/*.yml" "**/*.yaml"
+      - name: Lint yaml
+        run: yamllint .
+
+      - name: Install Groovy linter
+        run: npm install -g npm-groovy-lint
+      - name: Lint Groovy(Jenkinsfile)
+        run: npm-groovy-lint Jenkinsfile

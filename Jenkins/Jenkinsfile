@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+
+    environment {
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
+    }
+
+    stages {
+        stage('Prepare') {
+            steps {
+                echo "Starting deployment"
+                sh 'ansible --version'
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ansible-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+
+                        sh """
+                            ansible-playbook Jenkins/playbook.yaml \
+                            -i Jenkins/hosts \
+                            -u vagrant \
+                            --private-key \$SSH_KEY
+                        """
+                }
+            }
+        }
+    }
+}

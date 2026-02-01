@@ -1,0 +1,214 @@
+---
+
+# Play #1
+
+- name: Configure database
+  hosts: databases
+  remote_user: vagrant
+  become: yes
+  vars:
+    database_name: birds_db
+    database_user: vagrant
+    db_pass: vagrant
+
+  tasks:
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+        - postgresql
+        - python3-psycopg2
+        - acl
+        - nfs-kernel-server 
+      state: present
+      update_cache: yes
+
+# Configuring the PostgreSQL server
+
+  - name: Create a DB user
+    community.postgresql.postgresql_user:
+      name: "{{ database_user }}"
+      password: "{{ db_pass }}"
+    become_user: postgres  
+
+  - name: Create a database
+    community.postgresql.postgresql_db:
+      name: "{{ database_name }}"
+    become_user: postgres
+
+  - name: Grant privileges on database
+    community.postgresql.postgresql_privs:
+      login_db: "{{ database_name }}"
+      privs: ALL
+      type: database
+      role: vagrant
+    become_user: postgres
+
+  - name: Grant privileges on public schema
+    community.postgresql.postgresql_privs:
+      login_db: "{{ database_name }}"
+      privs: ALL
+      type: schema
+      objs: public
+      role: vagrant
+    become_user: postgres
+
+  - name: Enable listening on all network interfaces
+    community.postgresql.postgresql_alter_system:
+      param: listen_addresses
+      value: "*"
+    become_user: postgres
+    notify: Restart posgresql
+
+  - name: Add new record to pg_hba.conf
+    community.postgresql.postgresql_pg_hba:
+      dest: /etc/postgresql/16/main/pg_hba.conf
+      contype: host
+      databases: all
+      users: all
+      address: 192.168.0.0/24
+      method: scram-sha-256
+    notify: Restart posgresql
+
+# Configuring the NFS server
+
+  - name: Create a directory to share
+    ansible.builtin.file:
+      path: /var/nfs/bird_uploads
+      state: directory
+    notify: Restart NFS
+
+  - name: Modify ownership and permissions
+    ansible.builtin.file:
+      path: /var/nfs/bird_uploads
+      owner: nobody
+      group: nogroup
+      mode: '777'  
+  
+  - name: Add the directory to the NFS configuration file
+    ansible.builtin.lineinfile:
+      path: /etc/exports
+      line: '/var/nfs/bird_uploads 192.168.0.0/24(rw,sync,no_subtree_check)'
+
+ 
+  handlers:
+  - name: Restart posgresql
+    service:
+      name: postgresql
+      state: restarted
+
+  - name: Restart NFS
+    ansible.builtin.shell:
+      cmd: exportfs -a && systemctl restart nfs-kernel-server
+
+
+
+
+# Play #2
+
+- name: Configure webservers
+  hosts: webservers
+  remote_user: vagrant
+  become: yes
+
+  tasks:
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+        - nginx
+        - python3-pip
+        - python3.12-venv
+        - nfs-client
+
+      state: present
+      update_cache: yes
+
+  - name: Copy .env
+    ansible.builtin.copy:
+      src: files/.env
+      dest: /vagrant/flask_app
+
+  - name: Create venv
+    ansible.builtin.command:
+      cmd: python3 -m venv /vagrant/flask_app/venv
+      creates: /vagrant/flask_app/venv/bin/activate
+
+  - name: Install pip dependencies
+    ansible.builtin.pip:
+      requirements: /vagrant/flask_app/requirements.txt
+      virtualenv: /vagrant/flask_app/venv
+
+  - name: Mount the NFS
+    ansible.posix.mount:
+      path: /vagrant/flask_app/static/uploads
+      src: 192.168.0.13:/var/nfs/bird_uploads
+      opts: rw,sync,hard
+      state: mounted
+      fstype: nfs
+
+  - name: Set up Gunicorn service
+    ansible.builtin.copy:
+      src: files/gunicorn.service
+      dest: /etc/systemd/system/gunicorn.service
+
+  - name: Run init_db.py
+    ansible.builtin.command:
+      cmd: /vagrant/flask_app/venv/bin/python3 /vagrant/flask_app/init_db.py
+    when: ansible_hostname == 'app1'
+
+  - name: Start nginx service
+    ansible.builtin.service:
+      name: nginx
+      state: started
+
+  - name: Start gunicorn service
+    ansible.builtin.service:
+      name: gunicorn
+      state: started
+
+  - name: Enable gunicorn
+    ansible.builtin.service:
+      name: gunicorn
+      enabled: true
+
+
+
+
+# Play #3
+
+- name: Configure loadbalancer
+  hosts: loadbalancers
+  remote_user: vagrant
+  become: yes
+
+  tasks:
+  - name: Ensure nginx is installed
+    ansible.builtin.apt:
+      name:
+        - nginx
+      state: present
+      update_cache: yes
+
+  - name: Copy nginx loadbalancer config
+    ansible.builtin.copy:
+      src: files/lb_nginx.conf
+      dest: /etc/nginx/sites-available/lb_nginx.conf
+    notify: Reload nginx
+
+  - name: Enable new config
+    ansible.builtin.file:
+      src: /etc/nginx/sites-available/lb_nginx.conf
+      dest: /etc/nginx/sites-enabled/default
+      state: link
+    notify: Reload nginx
+
+
+  - name: Start nginx service
+    ansible.builtin.service:
+      name: nginx
+      state: started
+
+  handlers:
+  - name: Reload nginx
+    service:
+      name: nginx
+      state: reloaded

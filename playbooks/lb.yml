@@ -1,0 +1,38 @@
+---
+- name: Configure loadbalancer
+  hosts: loadbalancers
+  remote_user: vagrant
+  become: yes
+
+  tasks:
+  - name: Ensure nginx is installed
+    ansible.builtin.apt:
+      name:
+        - nginx
+      state: present
+      update_cache: yes
+
+  - name: Copy nginx loadbalancer config
+    ansible.builtin.copy:
+      src: files/lb_nginx.conf
+      dest: /etc/nginx/sites-available/lb_nginx.conf
+    notify: Reload nginx
+
+  - name: Enable new config
+    ansible.builtin.file:
+      src: /etc/nginx/sites-available/lb_nginx.conf
+      dest: /etc/nginx/sites-enabled/default
+      state: link
+    notify: Reload nginx
+
+
+  - name: Start nginx service
+    ansible.builtin.service:
+      name: nginx
+      state: started
+
+  handlers:
+  - name: Reload nginx
+    service:
+      name: nginx
+      state: reloaded

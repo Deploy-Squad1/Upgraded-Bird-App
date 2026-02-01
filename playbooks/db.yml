@@ -1,0 +1,99 @@
+---
+- name: Configure database
+  hosts: databases
+  remote_user: vagrant
+  become: yes
+  vars:
+    database_name: birds_db
+    database_user: vagrant
+    db_pass: vagrant
+
+  tasks:
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+        - postgresql
+        - python3-psycopg2
+        - acl
+        - nfs-kernel-server 
+      state: present
+      update_cache: yes
+
+# Configuring the PostgreSQL server
+
+  - name: Create a DB user
+    community.postgresql.postgresql_user:
+      name: "{{ database_user }}"
+      password: "{{ db_pass }}"
+    become_user: postgres  
+
+  - name: Create a database
+    community.postgresql.postgresql_db:
+      name: "{{ database_name }}"
+    become_user: postgres
+
+  - name: Grant privileges on database
+    community.postgresql.postgresql_privs:
+      login_db: "{{ database_name }}"
+      privs: ALL
+      type: database
+      role: vagrant
+    become_user: postgres
+
+  - name: Grant privileges on public schema
+    community.postgresql.postgresql_privs:
+      login_db: "{{ database_name }}"
+      privs: ALL
+      type: schema
+      objs: public
+      role: vagrant
+    become_user: postgres
+
+  - name: Enable listening on all network interfaces
+    community.postgresql.postgresql_alter_system:
+      param: listen_addresses
+      value: "*"
+    become_user: postgres
+    notify: Restart posgresql
+
+  - name: Add new record to pg_hba.conf
+    community.postgresql.postgresql_pg_hba:
+      dest: /etc/postgresql/16/main/pg_hba.conf
+      contype: host
+      databases: all
+      users: all
+      address: 192.168.0.0/24
+      method: scram-sha-256
+    notify: Restart posgresql
+
+# Configuring the NFS server
+
+  - name: Create a directory to share
+    ansible.builtin.file:
+      path: /var/nfs/bird_uploads
+      state: directory
+    notify: Restart NFS
+
+  - name: Modify ownership and permissions
+    ansible.builtin.file:
+      path: /var/nfs/bird_uploads
+      owner: nobody
+      group: nogroup
+      mode: '777'  
+  
+  - name: Add the directory to the NFS configuration file
+    ansible.builtin.lineinfile:
+      path: /etc/exports
+      line: '/var/nfs/bird_uploads 192.168.0.0/24(rw,sync,no_subtree_check)'
+
+
+  
+  handlers:
+  - name: Restart posgresql
+    service:
+      name: postgresql
+      state: restarted
+
+  - name: Restart NFS
+    ansible.builtin.shell:
+      cmd: exportfs -a && systemctl restart nfs-kernel-server

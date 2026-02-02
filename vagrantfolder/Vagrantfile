@@ -10,7 +10,7 @@ SERVICES = {
 Vagrant.configure("2") do |config|
   # SSH configuration: use host keys instead of Vagrant-generated
   config.ssh.insert_key = false
-  # config.ssh.verify_host_key = :accept_new_or_local_tunnel # Requires manual "yes" for "The authenticity of host ... can't be established." on first connection
+  config.ssh.verify_host_key = :accept_new_or_local_tunnel # Requires manual "yes" for "The authenticity of host ... can't be established." on first connection
   config.ssh.private_key_path = [
     '~/.ssh/id_rsa',
     '~/.vagrant.d/insecure_private_key'

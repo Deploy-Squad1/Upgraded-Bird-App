@@ -6,7 +6,6 @@
   hosts: database
   remote_user: vagrant
   become: yes
-  vars_files: db_vars.yml
 
   tasks:
   - name: Install packages
@@ -29,12 +28,12 @@
 
   - name: Create a database
     community.postgresql.postgresql_db:
-      name: "{{ database_name }}"
+      name: birds_db
     become_user: postgres
 
   - name: Grant privileges on database
     community.postgresql.postgresql_privs:
-      login_db: "{{ database_name }}"
+      login_db: birds_db
       privs: ALL
       type: database
       role: "{{ database_user }}"
@@ -42,7 +41,7 @@
 
   - name: Grant privileges on public schema
     community.postgresql.postgresql_privs:
-      login_db: "{{ database_name }}"
+      login_db: birds_db
       privs: ALL
       type: schema
       objs: public
@@ -62,7 +61,7 @@
       contype: host
       databases: all
       users: all
-      address: 192.168.1.0/24
+      address: 192.168.0.0/24
       method: scram-sha-256
     notify: Restart posgresql
 
@@ -84,7 +83,7 @@
   - name: Add the directory to the NFS configuration file
     ansible.builtin.lineinfile:
       path: /etc/exports
-      line: '/var/nfs/bird_uploads 192.168.1.0/24(rw,sync,no_subtree_check)'
+      line: '/var/nfs/bird_uploads 192.168.0.0/24(rw,sync,no_subtree_check)'
 
 
   
@@ -105,7 +104,6 @@
   hosts: webservers
   remote_user: vagrant
   become: yes
-  vars_files: db_vars.yml
 
   tasks:
   - name: Install packages
@@ -158,7 +156,7 @@
   - name: Mount the NFS
     ansible.posix.mount:
       path: /home/vagrant/bird_app/flask_app/static/uploads
-      src: 192.168.1.13:/var/nfs/bird_uploads
+      src: 192.168.0.13:/var/nfs/bird_uploads
       opts: rw,sync,hard
       state: mounted
       fstype: nfs

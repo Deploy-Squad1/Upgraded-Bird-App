@@ -1,6 +1,6 @@
 ---
 - name: Configure loadbalancer
-  hosts: loadbalancers
+  hosts: loadbalancer
   remote_user: vagrant
   become: yes
 

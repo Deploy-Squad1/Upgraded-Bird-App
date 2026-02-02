@@ -11,16 +11,16 @@ vms:
 webservers:
   hosts:
     192.168.0.11:
-      ansible_ssh_private_key_file: .ssh/app1_key 
+      ansible_ssh_private_key_file: id_rsa
     192.168.0.12:
-      ansible_ssh_private_key_file: .ssh/app2_key
+      ansible_ssh_private_key_file: id_rsa
 
 loadbalancers:
   hosts:
     192.168.0.10:
-      ansible_ssh_private_key_file: .ssh/lb_key
+      ansible_ssh_private_key_file: id_rsa
 
 databases:
   hosts:
     192.168.0.13:
-      ansible_ssh_private_key_file: .ssh/database_key
+      ansible_ssh_private_key_file: id_rsa

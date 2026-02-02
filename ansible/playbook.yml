@@ -1,15 +1,12 @@
 ---
 
-# Play #1
+# Database play
 
 - name: Configure database
   hosts: databases
   remote_user: vagrant
   become: yes
-  vars:
-    database_name: birds_db
-    database_user: vagrant
-    db_pass: vagrant
+  vars_files: db_vars.yml
 
   tasks:
   - name: Install packages
@@ -27,7 +24,7 @@
   - name: Create a DB user
     community.postgresql.postgresql_user:
       name: "{{ database_user }}"
-      password: "{{ db_pass }}"
+      password: "{{ database_password }}"
     become_user: postgres  
 
   - name: Create a database
@@ -89,7 +86,8 @@
       path: /etc/exports
       line: '/var/nfs/bird_uploads 192.168.0.0/24(rw,sync,no_subtree_check)'
 
- 
+
+  
   handlers:
   - name: Restart posgresql
     service:
@@ -101,14 +99,13 @@
       cmd: exportfs -a && systemctl restart nfs-kernel-server
 
 
-
-
-# Play #2
+# Apps (webservers) play
 
 - name: Configure webservers
   hosts: webservers
   remote_user: vagrant
   become: yes
+  vars_files: db_vars.yml
 
   tasks:
   - name: Install packages
@@ -122,24 +119,45 @@
       state: present
       update_cache: yes
 
-  - name: Copy .env
+  - name: Copy git key
     ansible.builtin.copy:
-      src: files/.env
-      dest: /vagrant/flask_app
+      src: git_key
+      dest: /home/vagrant/.ssh/git_key
+      mode: "0600"
+      owner: vagrant
+      group: vagrant
+
+  - name: Clone git repo
+    ansible.builtin.git:
+      repo: git@github.com:Deploy-Squad1/Upgraded-Bird-App.git
+      dest: /home/vagrant/bird_app
+      key_file: /home/vagrant/.ssh/git_key
+      accept_hostkey: true
+    become: no
+
+  - name: Copy .env
+    ansible.builtin.template:
+      src: files/.env.j2
+      dest: /home/vagrant/bird_app/flask_app/.env
 
   - name: Create venv
     ansible.builtin.command:
-      cmd: python3 -m venv /vagrant/flask_app/venv
-      creates: /vagrant/flask_app/venv/bin/activate
+      cmd: python3 -m venv /home/vagrant/bird_app/flask_app/venv
+      creates: /home/vagrant/bird_app/flask_app/venv/bin/activate
 
   - name: Install pip dependencies
     ansible.builtin.pip:
-      requirements: /vagrant/flask_app/requirements.txt
-      virtualenv: /vagrant/flask_app/venv
+      requirements: /home/vagrant/bird_app/flask_app/requirements.txt
+      virtualenv: /home/vagrant/bird_app/flask_app/venv
+
+  - name: Run init_db.py
+    ansible.builtin.command:
+      cmd: /home/vagrant/bird_app/flask_app/venv/bin/python3 /home/vagrant/bird_app/flask_app/init_db.py
+    when: ansible_hostname == 'app1'
 
   - name: Mount the NFS
     ansible.posix.mount:
-      path: /vagrant/flask_app/static/uploads
+      path: /home/vagrant/bird_app/flask_app/static/uploads
       src: 192.168.0.13:/var/nfs/bird_uploads
       opts: rw,sync,hard
       state: mounted
@@ -149,11 +167,6 @@
     ansible.builtin.copy:
       src: files/gunicorn.service
       dest: /etc/systemd/system/gunicorn.service
-
-  - name: Run init_db.py
-    ansible.builtin.command:
-      cmd: /vagrant/flask_app/venv/bin/python3 /vagrant/flask_app/init_db.py
-    when: ansible_hostname == 'app1'
 
   - name: Start nginx service
     ansible.builtin.service:
@@ -171,9 +184,7 @@
       enabled: true
 
 
-
-
-# Play #3
+# Loadbalancer play
 
 - name: Configure loadbalancer
   hosts: loadbalancers

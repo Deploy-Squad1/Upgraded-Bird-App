@@ -3,10 +3,7 @@
   hosts: databases
   remote_user: vagrant
   become: yes
-  vars:
-    database_name: birds_db
-    database_user: vagrant
-    db_pass: vagrant
+  vars_files: db_vars.yml
 
   tasks:
   - name: Install packages
@@ -24,7 +21,7 @@
   - name: Create a DB user
     community.postgresql.postgresql_user:
       name: "{{ database_user }}"
-      password: "{{ db_pass }}"
+      password: "{{ database_password }}"
     become_user: postgres  
 
   - name: Create a database

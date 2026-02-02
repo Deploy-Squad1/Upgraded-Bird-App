@@ -1,0 +1,82 @@
+---
+- name: Configure webservers
+  hosts: webservers
+  remote_user: vagrant
+  become: yes
+  vars_files: db_vars.yml
+
+  tasks:
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+        - nginx
+        - python3-pip
+        - python3.12-venv
+        - nfs-client
+
+      state: present
+      update_cache: yes
+
+  - name: Copy git key
+    ansible.builtin.copy:
+      src: git_key
+      dest: /home/vagrant/.ssh/git_key
+      mode: "0600"
+      owner: vagrant
+      group: vagrant
+
+  - name: Clone git repo
+    ansible.builtin.git:
+      repo: git@github.com:Deploy-Squad1/Upgraded-Bird-App.git
+      dest: /home/vagrant/bird_app
+      key_file: /home/vagrant/.ssh/git_key
+      accept_hostkey: true
+    become: no
+
+  - name: Copy .env
+    ansible.builtin.template:
+      src: files/.env.j2
+      dest: /home/vagrant/bird_app/flask_app/.env
+
+  - name: Create venv
+    ansible.builtin.command:
+      cmd: python3 -m venv /home/vagrant/bird_app/flask_app/venv
+      creates: /home/vagrant/bird_app/flask_app/venv/bin/activate
+
+  - name: Install pip dependencies
+    ansible.builtin.pip:
+      requirements: /home/vagrant/bird_app/flask_app/requirements.txt
+      virtualenv: /home/vagrant/bird_app/flask_app/venv
+
+  - name: Run init_db.py
+    ansible.builtin.command:
+      cmd: /home/vagrant/bird_app/flask_app/venv/bin/python3 /home/vagrant/bird_app/flask_app/init_db.py
+    when: ansible_hostname == 'app1'
+
+  - name: Mount the NFS
+    ansible.posix.mount:
+      path: /home/vagrant/bird_app/flask_app/static/uploads
+      src: 192.168.0.13:/var/nfs/bird_uploads
+      opts: rw,sync,hard
+      state: mounted
+      fstype: nfs
+
+  - name: Set up Gunicorn service
+    ansible.builtin.copy:
+      src: files/gunicorn.service
+      dest: /etc/systemd/system/gunicorn.service
+
+  - name: Start nginx service
+    ansible.builtin.service:
+      name: nginx
+      state: started
+
+  - name: Start gunicorn service
+    ansible.builtin.service:
+      name: gunicorn
+      state: started
+
+  - name: Enable gunicorn
+    ansible.builtin.service:
+      name: gunicorn
+      enabled: true

@@ -5,8 +5,8 @@ After=network.target
 [Service]
 User=vagrant
 Group=www-data
-WorkingDirectory=/vagrant/flask_app
-ExecStart=/vagrant/flask_app/venv/bin/gunicorn \
+WorkingDirectory=/home/vagrant/bird_app/flask_app
+ExecStart=/home/vagrant/bird_app/flask_app/venv/bin/gunicorn \
 --bind 0.0.0.0:5000 \
 app:app
 

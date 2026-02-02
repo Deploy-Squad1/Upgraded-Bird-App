@@ -1,3 +1,6 @@
+INSTRUCTIONS DEPRECATED: Ansible is now run with Jenkins, keys(credentials) are passed with --extra-vars
+
+
 To launch the playbooks, ensure that the following conditions are met:
 
 Ansible is installed using

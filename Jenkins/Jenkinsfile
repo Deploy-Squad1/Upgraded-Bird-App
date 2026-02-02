@@ -15,13 +15,18 @@ pipeline {
 
         stage('Run Ansible Playbook') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'ansible-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                withCredentials([
+		    sshUserPrivateKey(credentialsId: 'ansible-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
+                    usernamePassword(credentialsId: 'db-creds', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS'),
+		    sshUserPrivateKey(credentialsId: 'github-key', keyFileVariable: 'GH_KEY', usernameVariable: 'GH_USER')
+		]) {
 
                         sh """
-                            ansible-playbook Jenkins/playbook.yaml \
+                            ansible-playbook ansible/playbook.yml \
                             -i Jenkins/hosts \
                             -u vagrant \
-                            --private-key \$SSH_KEY
+                            --private-key \$SSH_KEY \
+			    --extra-vars "database_user=\$DB_USER database_password=\$DB_PASS git_key=\$GH_KEY"
                         """
                 }
             }

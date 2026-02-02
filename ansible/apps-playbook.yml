@@ -19,7 +19,7 @@
 
   - name: Copy git key
     ansible.builtin.copy:
-      content: "{{ git_key }}"
+      src: "{{ git_key }}"
       dest: /home/vagrant/.ssh/git_key
       mode: "0600"
       owner: vagrant

@@ -1,6 +1,6 @@
 ---
 - name: Configure database
-  hosts: databases
+  hosts: database
   remote_user: vagrant
   become: yes
   vars_files: db_vars.yml
@@ -34,7 +34,7 @@
       login_db: "{{ database_name }}"
       privs: ALL
       type: database
-      role: vagrant
+      role: "{{ database_user }}"
     become_user: postgres
 
   - name: Grant privileges on public schema
@@ -43,7 +43,7 @@
       privs: ALL
       type: schema
       objs: public
-      role: vagrant
+      role: "{{ database_user }}"
     become_user: postgres
 
   - name: Enable listening on all network interfaces

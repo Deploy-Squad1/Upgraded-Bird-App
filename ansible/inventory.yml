@@ -1,8 +1,8 @@
 vms:
   children:
     webservers:
-    loadbalancers:
-    databases:
+    loadbalancer:
+    database:
   
   vars:
     ansible_user: vagrant
@@ -13,10 +13,10 @@ webservers:
     192.168.0.11:
     192.168.0.12:
 
-loadbalancers:
+loadbalancer:
   hosts:
     192.168.0.10:
 
-databases:
+database:
   hosts:
     192.168.0.13:

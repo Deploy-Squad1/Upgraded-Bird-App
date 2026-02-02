@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+
+    environment {
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
+    }
+
+    stages {
+        stage('Prepare') {
+            steps {
+                echo "Starting deployment"
+                sh 'ansible --version'
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                withCredentials([
+		    sshUserPrivateKey(credentialsId: 'ansible-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
+                    usernamePassword(credentialsId: 'db-creds', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS'),
+		    sshUserPrivateKey(credentialsId: 'github-key', keyFileVariable: 'GH_KEY', usernameVariable: 'GH_USER')
+		]) {
+
+                        sh """
+                            ansible-playbook ansible/playbook.yml \
+                            -i Jenkins/hosts \
+                            -u vagrant \
+                            --private-key \$SSH_KEY \
+			    --extra-vars "database_user=\$DB_USER database_password=\$DB_PASS git_key=\$GH_KEY"
+                        """
+                }
+            }
+        }
+    }
+}

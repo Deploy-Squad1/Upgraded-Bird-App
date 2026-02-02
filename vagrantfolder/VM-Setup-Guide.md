@@ -5,15 +5,23 @@
 
 2. Create project **folder**, open it and use `vagrant init`. This will create Vagrantfile in your folder automatically.
 
-3. Change Vagrantfile to the example provided in this folder (it contains such information: which provider to use (VmWare, VirtualBox, UTM), base images (boxes), static IPs, ports for SSH connection)
+3. Generate SSH key pair for VM authentication:
+```bash
+   ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa
+```
+   This creates:
+   - `~/.ssh/id_rsa` (private key - keep secure)
+   - `~/.ssh/id_rsa.pub` (public key - will be copied to VMs)
 
-4. Only after configuring Vagrantfile use `vagrant up` (or `vagrant up --provider=virtualbox` if you want to use specific provider)
+4. Change Vagrantfile to the example provided in this folder (it contains such information: which provider to use (VmWare, VirtualBox, UTM), base images (boxes), static IPs, ports for SSH connection)
 
-5. Use `vagrant box list` to check all active boxes
+5. Only after configuring Vagrantfile use `vagrant up` (or `vagrant up --provider=virtualbox` if you want to use specific provider)
 
-6. For connection to VM use `vagrant ssh <vmname>`
+6. Use `vagrant box list` to check all active boxes
 
-7. Default user&pass: **vagrant**
+7. For connection to VM use `vagrant ssh <vmname>`
+
+8. Default user&pass: **vagrant**
 
 # Helpful information:
 - Suspend the machine to temporarily pause your work `vagrant suspend` (It sets VMs to sleep mode). When you are ready to resume, use `vagrant resume` to restore the environment to its previous state.

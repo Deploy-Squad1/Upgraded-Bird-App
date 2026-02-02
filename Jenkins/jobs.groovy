@@ -7,7 +7,7 @@ pipelineJob('ansible-deploy-pipeline') {
                         url('git@github.com:Deploy-Squad1/Upgraded-Bird-App.git')
                         credentials('github-key')
                     }
-                    branch('DS-35-Jenkins-configuration') 
+                    branch('main') 
                 }
             }
             scriptPath('Jenkins/Jenkinsfile')

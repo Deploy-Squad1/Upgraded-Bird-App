@@ -4,3 +4,4 @@
 venv/
 static/uploads/*
 !static/uploads/.gitkeep
+.terraform/

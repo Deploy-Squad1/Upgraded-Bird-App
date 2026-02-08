@@ -10,5 +10,8 @@ groups:
   app: "'app' in tags.Role"
   consul: "'consul' in tags.Role"
 
+compose:
+  ansible_host: private_ip_address
+
 vars:
-    ansible_user: ubuntu
+  ansible_user: ubuntu

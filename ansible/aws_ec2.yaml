@@ -1,0 +1,14 @@
+plugin: aws_ec2
+aws_profile: default
+
+regions:
+  - eu-central-1
+
+groups:
+  loadbalancer: "'loadbalancer' in tags.Role"
+  database: "'database' in tags.Role"
+  app: "'app' in tags.Role"
+  consul: "'consul' in tags.Role"
+
+vars:
+    ansible_user: ubuntu

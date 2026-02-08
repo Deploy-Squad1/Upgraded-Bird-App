@@ -23,11 +23,16 @@ pipeline {
 		]) {
 
                         sh """
-                            ansible-playbook ansible/playbook.yml \
-                            -i Jenkins/hosts \
-                            -u vagrant \
-                            --private-key \$SSH_KEY \
-			    --extra-vars "database_user=\$DB_USER database_password=\$DB_PASS git_key=\$GH_KEY app_secret_key=\$APP_SECRET"
+
+			    COMMON_ARGS="-i aws_ec2.yaml -u ubuntu --private-key \$SSH_KEY --extra-vars 'database_user=\$DB_USER database_password=\$DB_PASS git_key=\$GH_KEY app_secret_key=\$APP_SECRET'"
+                           echo "Deploying DB"
+                           ansible-playbook ansible/database.yml \$COMMON_ARGS
+
+                           echo "Deploying LB"
+                           ansible-playbook ansible/loadbalancer.yml \$COMMON_ARGS
+
+                          echo "Deploying Apps"
+                          ansible-playbook ansible/apps.yml \$COMMON_ARGS 
                         """
                 }
             }

@@ -1,0 +1,96 @@
+---
+- name: Install and Configure Consul
+  # Ignoring Jenkins
+  hosts: all:!jenkins
+  become: yes
+
+  vars:
+    # Take IP from the consul group
+    consul_server_join_ip: "{{ hostvars[groups['consul'][0]]['private_ip_address'] }}"
+
+  tasks:
+    # Consul installation
+    - name: Download HashiCorp key
+      ansible.builtin.get_url:
+        url: https://apt.releases.hashicorp.com/gpg
+        dest: /usr/share/keyrings/hashicorp-archive-keyring.asc
+        mode: '0644'
+
+
+    - name: Add HashiCorp repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main"
+        state: present
+        filename: hashicorp
+    
+
+    - name: Install Consul
+      ansible.builtin.apt:
+        name: consul
+        state: present
+        update_cache: yes
+
+    - name: Create Consul data directory
+      ansible.builtin.file:
+        path: /var/lib/consul
+        state: directory
+        owner: consul
+        group: consul
+        mode: '0750'
+
+    # Consul server configuration
+    - name: Deploy Server Configuration
+      ansible.builtin.template:
+        src: files/server.hcl.j2
+        dest: /etc/consul.d/consul.hcl
+        owner: consul
+        group: consul
+        mode: '0640'
+      when: "'consul' in group_names"
+      notify: Restart Consul
+
+    # Consul agents configuration
+    - name: Deploy Client Configuration
+      ansible.builtin.template:
+        src: files/client.hcl.j2
+        dest: /etc/consul.d/consul.hcl
+        owner: consul
+        group: consul
+        mode: '0640'
+      when: "'consul' not in group_names"
+      notify: Restart Consul
+
+    # 3. Flask service
+    - name: Register Flask Service
+      ansible.builtin.copy:
+        src: files/flask-service.json
+        dest: /etc/consul.d/flask-service.json
+        owner: consul
+        group: consul
+        mode: '0640'
+      when: "'app' in group_names"
+      notify: Restart Consul
+
+    # Posgres Service
+    - name: Register Postgres Service
+      ansible.builtin.copy:
+        src: files/postgres-service.json
+        dest: /etc/consul.d/postgres-service.json
+        owner: consul
+        group: consul
+        mode: '0640'
+      when: "'database' in group_names"
+      notify: Restart Consul
+
+    # Run
+    - name: Ensure Consul is started and enabled
+      ansible.builtin.service:
+        name: consul
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Consul
+      ansible.builtin.service:
+        name: consul
+        state: restarted

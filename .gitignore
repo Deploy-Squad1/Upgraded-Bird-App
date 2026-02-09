@@ -4,6 +4,10 @@
 venv/
 static/uploads/*
 !static/uploads/.gitkeep
+flask_app/__pycache__
+flask_app/.vscode
+flask_app/app/__pycache__
+flask_app/app/static/uploads/*
 .terraform/
 *.tfstate
 *.tfstate.*

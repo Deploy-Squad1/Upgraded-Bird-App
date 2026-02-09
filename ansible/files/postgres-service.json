@@ -1,0 +1,11 @@
+{
+  "service": {
+    "name": "postgres",
+    "port": 5432,
+    "check": {
+      "tcp": "localhost:5000",
+      "interval": "10s",
+      "timeout": "2s"
+    }
+  }
+}

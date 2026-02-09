@@ -18,16 +18,29 @@ pipeline {
                 withCredentials([
 		    sshUserPrivateKey(credentialsId: 'ansible-key', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER'),
                     usernamePassword(credentialsId: 'db-creds', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASS'),
-		    sshUserPrivateKey(credentialsId: 'github-key', keyFileVariable: 'GH_KEY', usernameVariable: 'GH_USER')
+		    sshUserPrivateKey(credentialsId: 'github-key', keyFileVariable: 'GH_KEY', usernameVariable: 'GH_USER'),
 		    string(credentialsId: 'bird-app-secret-key', variable: 'APP_SECRET' )
 		]) {
 
                         sh """
-                            ansible-playbook ansible/playbook.yml \
-                            -i Jenkins/hosts \
-                            -u vagrant \
-                            --private-key \$SSH_KEY \
-			    --extra-vars "database_user=\$DB_USER database_password=\$DB_PASS git_key=\$GH_KEY app_secret_key=\$APP_SECRET"
+
+			  COMMON_ARGS="-i ansible/aws_ec2.yaml -u ubuntu --private-key ${SSH_KEY} \
+                          -e database_user=${DB_USER} \
+                          -e database_password=${DB_PASS} \
+                          -e git_key=${GH_KEY} \
+                          -e app_secret_key=${APP_SECRET}"
+
+                          echo "Deploying DB"
+                          ansible-playbook ansible/database.yml \$COMMON_ARGS
+
+                          echo "Deploying LB"
+                          ansible-playbook ansible/loadbalancer.yml \$COMMON_ARGS
+
+                          echo "Deploying Apps"
+                          ansible-playbook ansible/apps.yml \$COMMON_ARGS
+
+			  echo "Deploying Consul"
+			  ansible-playbook ansible/consul.yaml \$COMMON_ARGS -f1
                         """
                 }
             }

@@ -1,0 +1,12 @@
+{
+  "service": {
+    "name": "flask-app",
+    "port": 5000,
+    "check": {
+      "http": "http://localhost:5000/health",
+      "method": "GET",
+      "interval": "10s",
+      "timeout": "2s"
+    }
+  }
+}

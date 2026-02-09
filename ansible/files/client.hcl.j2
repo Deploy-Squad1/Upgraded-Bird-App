@@ -1,0 +1,12 @@
+datacenter = "dc1"
+data_dir = "/var/lib/consul"
+node_name = "{{ ansible_hostname }}"
+
+bind_addr = "{{ private_ip_address | default(ansible_default_ipv4.address) }}"
+client_addr = "0.0.0.0"
+server = false
+retry_join = ["{{ consul_server_join_ip }}"]
+
+ports {
+  dns = 8600
+}

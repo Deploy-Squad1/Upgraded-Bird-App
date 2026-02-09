@@ -1,0 +1,89 @@
+---
+
+- name: Configure webservers
+  hosts: app
+  become: yes
+
+  tasks:
+  - name: Install packages
+    ansible.builtin.apt:
+      name:
+        - nginx
+        - python3-pip
+        - python3.12-venv
+        - nfs-client
+
+      state: present
+      update_cache: yes
+
+  - name: Copy git key
+    ansible.builtin.copy:
+      src: "{{ git_key }}"
+      dest: "/home/{{ ansible_user }}/.ssh/git_key"
+      mode: "0600"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
+
+  - name: Clone git repo
+    ansible.builtin.git:
+      repo: git@github.com:Deploy-Squad1/Upgraded-Bird-App.git
+      dest: "/home/{{ ansible_user }}/bird_app"
+      key_file: "/home/{{ ansible_user }}/.ssh/git_key"
+      accept_hostkey: true
+    become: no
+
+  - name: Copy .env
+    ansible.builtin.template:
+      src: files/.env.j2
+      dest: "/home/{{ ansible_user }}/bird_app/flask_app/.env"
+
+  - name: Create venv
+    ansible.builtin.command:
+      cmd: "python3 -m venv /home/{{ ansible_user }}/bird_app/flask_app/venv"
+      creates: "/home/{{ ansible_user }}/bird_app/flask_app/venv/bin/activate"
+
+  - name: Install pip dependencies
+    ansible.builtin.pip:
+      requirements: "/home/{{ ansible_user }}/bird_app/flask_app/requirements.txt"
+      virtualenv: "/home/{{ ansible_user }}/bird_app/flask_app/venv"
+
+# In future, need to implement checking whether running of the script is required.
+# We only need to initialize the database if the models.py changed
+  - name: Run init_db.py
+    ansible.builtin.command:
+      cmd: "/home/{{ ansible_user }}/bird_app/flask_app/venv/bin/python3 /home/{{ ansible_user }}/bird_app/flask_app/init_db.py"
+
+  - name: Mount the NFS
+    ansible.posix.mount:
+      path: "/home/{{ ansible_user }}/bird_app/flask_app/static/uploads"
+      src: "{{ groups['database'][0] }}:/var/nfs/bird_uploads"
+      opts: rw,sync,hard
+      state: mounted
+      fstype: nfs
+
+  - name: Set up Gunicorn service
+    ansible.builtin.template:
+      src: files/gunicorn.service.j2
+      dest: /etc/systemd/system/gunicorn.service
+    notify: Reread systemd configs
+
+  - name: Start nginx service
+    ansible.builtin.service:
+      name: nginx
+      state: started
+
+  - name: Start gunicorn service
+    ansible.builtin.service:
+      name: gunicorn
+      state: started
+
+  - name: Enable gunicorn
+    ansible.builtin.service:
+      name: gunicorn
+      enabled: true
+
+
+  handlers:
+  - name: Reread systemd configs
+    ansible.builtin.systemd_service:
+      daemon_reload: true

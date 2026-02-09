@@ -1,51 +1,11 @@
+from . import app, db
+from .models import User, Image
 import os
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask import render_template, request, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-
-load_dotenv()
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/uploads')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-db = SQLAlchemy(app)
-login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-
-
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=False)
-    images = db.relationship('Image', backref='author', lazy=True)
-
-
-class Image(db.Model):
-    __tablename__ = 'images'
-    id = db.Column(db.Integer, primary_key=True)
-    filename = db.Column(db.String(255), nullable=False)
-    bird_name = db.Column(db.String(100), nullable=False)
-    location = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
 
 @app.route('/')
 def index():
@@ -141,7 +101,18 @@ def delete_image(image_id):
     return redirect(url_for('index'))
 
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+@app.route('/like/<int:image_id>', methods=['POST'])
+@login_required
+def like_image(image_id):
+    image = Image.query.get_or_404(image_id)
+    if (image in current_user.liked_pictures):
+        image.likes.remove(current_user)
+        db.session.commit()
+    else:
+        image.likes.append(current_user)
+        db.session.commit()
+    return redirect(url_for('index'))
+
+@app.route('/health')
+def health_check():
+    return "OK", 200

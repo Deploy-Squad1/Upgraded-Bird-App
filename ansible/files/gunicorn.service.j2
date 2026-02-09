@@ -3,8 +3,6 @@ Description=gunicorn daemon
 After=network.target
 
 [Service]
-User={{ ansible_user }}
-Group=www-data
 WorkingDirectory=/home/{{ ansible_user }}/bird_app/flask_app
 ExecStart=/home/{{ ansible_user }}/bird_app/flask_app/venv/bin/gunicorn \
 --bind 0.0.0.0:5000 \

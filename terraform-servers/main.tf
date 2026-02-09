@@ -13,6 +13,7 @@ resource "aws_instance" "lb" {
   subnet_id = aws_subnet.public.id
   vpc_security_group_ids = [aws_security_group.lb_sg.id]
   iam_instance_profile = "ssm-profile"
+  key_name = "ansible_key"
   tags = {
     Name= "LoadBalancer"
     Role= "loadbalancer"
@@ -36,9 +37,9 @@ resource "aws_instance" "instances" {
   subnet_id            = aws_subnet.private.id
   iam_instance_profile = "ssm-profile"
   vpc_security_group_ids = [aws_security_group.private_sg.id]
+  key_name = "ansible_key"
   tags = {
     Name = each.key
     Role = each.value
   }
 }
-

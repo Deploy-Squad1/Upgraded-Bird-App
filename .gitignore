@@ -5,3 +5,7 @@ venv/
 static/uploads/*
 !static/uploads/.gitkeep
 .terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+ansible_key

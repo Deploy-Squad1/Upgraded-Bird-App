@@ -1,11 +1,22 @@
 from . import app, db
-from .models import User, Image
+from .models import User, Image, Banned_IP
 import os
 from datetime import datetime
 from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+
+@app.before_request
+def check_ip_allowed():
+    ip = request.remote_addr
+    banned_ips = Banned_IP.query.all()
+    for banned_ip in banned_ips:
+        if check_password_hash(banned_ip.ip_hash, ip):
+            return redirect('https://www.google.com/')
+    
+    redirect(url_for('index'))
+    
 
 @app.route('/')
 def index():
@@ -14,6 +25,10 @@ def index():
     except:
         images = []
     return render_template('index.html', images=images)
+
+@app.route('/health')
+def health():
+    return "OK", 200
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -113,6 +128,20 @@ def like_image(image_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-@app.route('/health')
-def health_check():
-    return "OK", 200
+
+@app.route('/report/<ip>')
+@login_required
+def add_banned_IP(ip):
+    if current_user.username == 'admin':
+        banned_ips = Banned_IP.query.all()
+        for banned_ip in banned_ips:
+            if check_password_hash(banned_ip.ip_hash, ip):
+                return "Already banned"
+            
+        ip_hash = generate_password_hash(ip)
+        banned_ip = Banned_IP(ip_hash=ip_hash)
+        db.session.add(banned_ip)
+        db.session.commit()
+        return "The IP has been banned"
+    
+    return "You are not supposed to be here", 403

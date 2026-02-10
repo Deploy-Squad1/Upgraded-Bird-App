@@ -11,7 +11,7 @@
         - nginx
         - python3-pip
         - python3.12-venv
-        - nfs-client
+        - nfs-common
 
       state: present
       update_cache: yes
@@ -55,7 +55,7 @@
 
   - name: Mount the NFS
     ansible.posix.mount:
-      path: "/home/{{ ansible_user }}/bird_app/flask_app/static/uploads"
+      path: "/home/{{ ansible_user }}/bird_app/flask_app/app/static/uploads"
       src: "{{ groups['database'][0] }}:/var/nfs/bird_uploads"
       opts: rw,sync,hard
       state: mounted

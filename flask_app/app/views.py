@@ -145,3 +145,22 @@ def add_banned_IP(ip):
         return "The IP has been banned"
     
     return "You are not supposed to be here", 403
+
+@app.route('/unban/<ip>')
+@login_required
+def remove_banned_IP(ip):
+    if current_user.username == 'admin':
+        banned_ips = Banned_IP.query.all()
+        for banned_ip in banned_ips:
+            if check_password_hash(banned_ip.ip_hash, ip):
+                db.session.delete(banned_ip)
+                db.session.commit()
+                return "The IP has been unbanned"
+            
+        return "This IP is not banned"
+    
+    return "You are not supposed to be here", 403
+
+@app.route('/health')
+def health_check():
+    return "OK", 200

@@ -66,3 +66,9 @@ resource "aws_route_table_association" "private_assoc" {
 }
 
 
+resource "aws_eip" "lb_eip" {
+  instance = aws_instance.lb.id
+  tags = { Name = "Birds_LB_EIP" }
+}
+
+

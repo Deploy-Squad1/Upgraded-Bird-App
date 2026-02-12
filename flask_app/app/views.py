@@ -6,15 +6,19 @@ from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+import hashlib
+
+def get_ip_hash(ip_address):
+    return hashlib.sha256(ip_address.encode('utf-8')).hexdigest()
 
 @app.before_request
 def check_ip_allowed():
     ip = request.remote_addr
-    banned_ips = Banned_IP.query.all()
-    for banned_ip in banned_ips:
-        if check_password_hash(banned_ip.ip_hash, ip):
-            return redirect('https://www.google.com/')
-    
+    if ip:
+        ip_hash = get_ip_hash(ip)
+        banned_ip = Banned_IP.query.filter_by(ip_hash=ip_hash).first()
+        if banned_ip:
+            return redirect('https://protocol.ua/ua/kriminalniy_kodeks_ukraini_stattya_248/')
     redirect(url_for('index'))
     
 
@@ -128,37 +132,50 @@ def like_image(image_id):
         db.session.commit()
     return redirect(url_for('index'))
 
-
-@app.route('/report/<ip>')
+@app.route('/admin')
 @login_required
-def add_banned_IP(ip):
+def admin_panel():
     if current_user.username == 'admin':
         banned_ips = Banned_IP.query.all()
-        for banned_ip in banned_ips:
-            if check_password_hash(banned_ip.ip_hash, ip):
-                return "Already banned"
-            
-        ip_hash = generate_password_hash(ip)
-        banned_ip = Banned_IP(ip_hash=ip_hash)
-        db.session.add(banned_ip)
-        db.session.commit()
-        return "The IP has been banned"
-    
+        return render_template('admin.html', banned_ips=banned_ips)
     return "You are not supposed to be here", 403
 
-@app.route('/unban/<ip>')
+@app.route('/report', methods=['POST'])
 @login_required
-def remove_banned_IP(ip):
+def add_banned_IP():
     if current_user.username == 'admin':
-        banned_ips = Banned_IP.query.all()
-        for banned_ip in banned_ips:
-            if check_password_hash(banned_ip.ip_hash, ip):
-                db.session.delete(banned_ip)
-                db.session.commit()
-                return "The IP has been unbanned"
-            
-        return "This IP is not banned"
-    
+        ip_to_ban = request.form.get('ip_address')
+        if not ip_to_ban:
+            flash('IP address is required!')
+            return redirect(url_for('admin_panel'))
+        ip_hash = get_ip_hash(ip_to_ban)
+        if Banned_IP.query.filter_by(ip_hash=ip_hash).first():
+            flash('This IP is already banned!')
+            return redirect(url_for('admin_panel'))
+        else:
+            new_ban = Banned_IP(ip_hash=ip_hash)
+            db.session.add(new_ban)
+            db.session.commit()
+            flash('The IP has been banned')
+        return redirect(url_for('admin_panel'))
+
+@app.route('/unban', methods=['POST'])
+@login_required
+def remove_banned_IP():
+    if current_user.username == 'admin':
+        ip_to_unban = request.form.get('ip_address')
+        if not ip_to_unban:
+            flash('IP address is required!')
+            return redirect(url_for('admin_panel'))
+        ip_hash = get_ip_hash(ip_to_unban)
+        banned_ip = Banned_IP.query.filter_by(ip_hash=ip_hash).first()
+        if banned_ip:
+            db.session.delete(banned_ip)
+            db.session.commit()
+            flash("The IP has been unbanned")
+        else:
+            flash("This IP is already unbanned or was never banned")
+        return redirect(url_for('admin_panel'))
     return "You are not supposed to be here", 403
 
 @app.route('/health')

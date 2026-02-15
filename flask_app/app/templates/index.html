@@ -11,6 +11,11 @@
         </div>
         <div class="col-auto">
             {% if current_user.is_authenticated %}
+            {% if current_user.username == 'admin' %}
+                <a href="/admin" class="btn btn-outline-secondary shadow me-2">
+                    <i class="bi bi-gear-fill me-2"></i>Admin Panel
+                </a>
+            {% endif %}
                 <a href="/upload" class="btn btn-success btn-lg shadow">
                     <i class="bi bi-camera-fill me-2"></i>Add Photo
                 </a>
@@ -54,7 +59,7 @@
 
                         {% if current_user.is_authenticated and image.author == current_user %}
                         <li class="d-flex align-items-center">
-                            <form action="{{ url_for('delete_image', image_id=image.id) }}" method="POST" style="position: relative; z-index: 10;" onsubmit="return confirm('Delete this photo?');">
+                            <form action="{{ url_for('delete_image', image_id=image.id) }}" method="POST" onsubmit="return confirm('Delete this photo?');">
                                 <button type="submit" class="btn btn-danger btn-sm rounded-circle p-2 lh-1" title="Delete">
                                     <i class="bi bi-trash-fill"></i>
                                 </button>

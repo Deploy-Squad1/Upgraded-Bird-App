@@ -30,3 +30,7 @@ class Image(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     likes = db.relationship('User', secondary=likes, backref='liked_pictures')
     
+class Banned_IP(db.Model):
+    __tablename__ = 'banned_ips'
+    id = db.Column(db.Integer, primary_key=True)
+    ip_hash = db.Column(db.String(255), unique=True, nullable=False)

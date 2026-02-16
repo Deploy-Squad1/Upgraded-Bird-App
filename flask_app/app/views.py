@@ -15,7 +15,8 @@ def get_ip_hash(ip_address):
 
 @app.before_request
 def check_ip_allowed():
-    ip = request.remote_addr
+    #ip = request.remote_addr
+    ip = request.headers.get('X-Forwarded-For', ip).split(',')[0].strip()
     if ip:
         ip_hash = get_ip_hash(ip)
         banned_ip = Banned_IP.query.filter_by(ip_hash=ip_hash).first()

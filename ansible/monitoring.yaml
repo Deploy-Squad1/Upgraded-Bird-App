@@ -1,0 +1,180 @@
+---
+
+- name: Install Node Exporter on all nodes
+  hosts: all:!jenkins
+  become: yes
+
+  tasks: 
+    - name: Create node_exporter user
+      ansible.builtin.user:
+        name: node_exporter
+        shell: /bin/false
+        create_home: no
+
+    - name: Download Node Exporter
+      ansible.builtin.get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/download/v1.10.2/node_exporter-1.10.2.linux-amd64.tar.gz"
+        dest: /tmp/node_exporter-1.10.2.linux-amd64.tar.gz
+
+    - name: Unpack Node Exporter
+      ansible.builtin.unarchive:
+        src: /tmp/node_exporter-1.10.2.linux-amd64.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Remove Node Exporter archive
+      ansible.builtin.file:
+        path: /tmp/node_exporter-1.10.2.linux-amd64.tar.gz
+        state: absent
+
+    - name: Install Node Exporter
+      ansible.builtin.copy:
+        src: "/tmp/node_exporter-1.10.2.linux-amd64/node_exporter"
+        dest: /usr/local/bin/node_exporter
+        mode: '0755'
+        owner: node_exporter
+        group: node_exporter
+        remote_src: yes
+      notify: Restart Node Exporter
+
+    - name: Deploy Node Exporter service file
+      ansible.builtin.copy:
+        src: files/node_exporter.service
+        dest: /etc/systemd/system/node_exporter.service
+        mode: '0644'
+      notify: Restart Node Exporter
+
+    - name: Register Node Exporter in Consul
+      ansible.builtin.copy:
+        src: files/node-exporter-service.json
+        dest: /etc/consul.d/node-exporter-service.json
+        owner: consul
+        group: consul
+        mode: '0640'
+      when: "'jenkins' not in group_names" 
+      notify: Reload Consul
+
+    - name: Ensure Node Exporter is started
+      ansible.builtin.service:
+        name: node_exporter
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Node Exporter
+      ansible.builtin.service:
+        name: node_exporter
+        state: restarted
+        daemon_reload: yes
+
+    - name: Reload Consul
+      ansible.builtin.service:
+        name: consul
+        state: reloaded
+
+
+- name: Install Prometheus and Grafana Server
+  hosts: consul 
+  become: yes
+
+  tasks:
+    - name: Create prometheus user
+      ansible.builtin.user:
+        name: prometheus
+        shell: /bin/false
+        create_home: no
+
+    - name: Create config directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: prometheus
+        group: prometheus
+        mode: '0755'
+      loop:
+        - /etc/prometheus
+        - /var/lib/prometheus
+
+    - name: Download Prometheus
+      ansible.builtin.get_url:
+        url: "https://github.com/prometheus/prometheus/releases/download/v2.43.0/prometheus-2.43.0.linux-amd64.tar.gz"
+        dest: /tmp/prometheus-2.43.0.linux-amd64.tar.gz
+
+    - name: Unpack Prometheus
+      ansible.builtin.unarchive:
+        src: /tmp/prometheus-2.43.0.linux-amd64.tar.gz
+        dest: /tmp/
+        remote_src: yes
+
+    - name: Remove Prometheus archive
+      ansible.builtin.file:
+        path: /tmp/prometheus-2.43.0.linux-amd64.tar.gz
+        state: absent
+
+    - name: Install Prometheus
+      ansible.builtin.copy:
+        src: "/tmp/prometheus-2.43.0.linux-amd64/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        mode: '0755'
+        owner: prometheus
+        group: prometheus
+        remote_src: yes
+      loop:
+        - prometheus
+        - promtool
+      notify: Restart Prometheus
+
+    - name: Deploy Prometheus Configuration
+      ansible.builtin.copy:
+        src: files/prometheus.yml
+        dest: /etc/prometheus/prometheus.yml
+        owner: prometheus
+        group: prometheus
+        mode: '0644'
+      notify: Restart Prometheus
+
+    - name: Deploy Prometheus Service file
+      ansible.builtin.copy:
+        src: files/prometheus.service
+        dest: /etc/systemd/system/prometheus.service
+        mode: '0644'
+      notify: Restart Prometheus
+
+    - name: Install dependencies for Grafana
+      ansible.builtin.apt:
+        pkg:
+          - apt-transport-https
+          - software-properties-common
+          - wget
+        state: present
+
+    - name: Add Grafana GPG key
+      ansible.builtin.apt_key:
+        url: https://apt.grafana.com/gpg.key
+        state: present
+
+    - name: Add Grafana Repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://apt.grafana.com stable main"
+        state: present
+        filename: grafana
+
+    - name: Install Grafana Enterprise
+      ansible.builtin.apt:
+        name: grafana-enterprise
+        state: present
+        update_cache: yes
+      notify: Start Grafana
+
+  handlers:
+    - name: Restart Prometheus
+      ansible.builtin.service:
+        name: prometheus
+        state: restarted
+        daemon_reload: yes
+
+    - name: Start Grafana
+      ansible.builtin.service:
+        name: grafana-server
+        state: started
+        enabled: yes

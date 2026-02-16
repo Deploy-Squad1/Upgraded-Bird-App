@@ -33,6 +33,26 @@ variable "loadbalancer_instance_type" {
   type        = string
 }
 
+variable "app_instance_type" {
+  description = "Instance type of the EC2s that host the flask application (deployed as an Auto Scaling group)"
+  type        = string
+}
+
+variable "asg_desired_capacity" {
+  description = "The desired number of EC2 Instances in the Auto Scaling group"
+  type        = number
+}
+
+variable "asg_min_size" {
+  description = "The minimum number of EC2 Instances in the Auto Scaling group"
+  type        = number
+}
+
+variable "asg_max_size" {
+  description = "The maximum number of EC2 Instances in the Auto Scaling group"
+  type        = number
+}
+
 variable "private_instances" {
   description = "Configuration of all the other EC2 instances. Role tag is created for further Ansible configuration"
   type = map(object({
@@ -55,16 +75,6 @@ variable "private_instances" {
     database = {
       name          = "database"
       role          = "database"
-      instance_type = "t3.micro"
-    }
-    app1 = {
-      name          = "app1"
-      role          = "app"
-      instance_type = "t3.micro"
-    }
-    app2 = {
-      name          = "app2"
-      role          = "app"
       instance_type = "t3.micro"
     }
   }

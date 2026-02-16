@@ -1,5 +1,5 @@
 This folder contains a reusable module for deploying EC2 instances to host a load balancer and other services needed to serve a web application.
-By default, these services include application servers, a database, a Consul server for service discovery and a Jenkins server for configuring all the instances.
+By default, these services include an Auto Scaling group for application services, a database, a Consul server for service discovery and a Jenkins server for configuring all the instances.
 
 A load balancer is deployed into a public subnet and listens for requests over HTTPS. All the other servers are deployed into a private subnet.
 
@@ -19,7 +19,7 @@ module "example" {
 
 
 The module supplies:
-- elastic IP for a loadbalancer
+- elastic IP for the loadbalancer
 - one security group that's attached to a loadbalancer
 - one security group that's attached to all the services in the private subnet
 - SSH keypair: The public key is uploaded to all the instances; the private key is saved locally. This key is needed for Ansible to later configure the instances. 

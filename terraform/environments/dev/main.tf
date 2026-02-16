@@ -30,6 +30,8 @@ module "instances" {
   public_subnet_id           = module.network.public_subnet_id
   loadbalancer_instance_type = var.loadbalancer_instance_type
   private_instances          = var.private_instances
+  app_instance_type          = var.app_instance_type
+  asg_desired_capacity       = var.asg_desired_capacity
+  asg_min_size               = var.asg_min_size
+  asg_max_size               = var.asg_max_size
 }
-
-

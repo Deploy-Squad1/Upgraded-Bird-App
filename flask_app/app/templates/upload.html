@@ -12,26 +12,47 @@
                 </div>
 
                 <div class="card-body p-4">
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
                     <form method="POST" enctype="multipart/form-data">
+
                         <div class="mb-4">
                             <label for="formFile" class="form-label fw-bold">Select Photo</label>
                             <input class="form-control form-control-lg" type="file" name="file" id="formFile" accept="image/*" required>
-                            <div class="form-text">Supported formats: JPG, PNG, GIF</div>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Bird Name</label>
-                            <div class="input-group">
-<!--                                <span class="input-group-text bg-light"><i class="bi bi-feather"></i></span>-->
-                                <input type="text" class="form-control" name="bird_name" placeholder="e.g. Great Tit" required>
-                            </div>
+                            <input type="text" class="form-control" name="bird_name" placeholder="e.g. Great Tit" required>
                         </div>
 
                         <div class="mb-4">
                             <label class="form-label fw-bold">Location</label>
-                            <div class="input-group">
-<!--                                <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill"></i></span>-->
-                                <input type="text" class="form-control" name="location" placeholder="e.g. Central Park" required>
+                            <input type="text" class="form-control" name="location" placeholder="e.g. Central Park" required>
+                        </div>
+
+                        <div class="mb-4 p-3 bg-light border rounded">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="protect_location" id="protectCheck"
+                                       data-bs-toggle="collapse" data-bs-target="#passwordBlock" aria-expanded="false" aria-controls="passwordBlock">
+                                <label class="form-check-label fw-bold" for="protectCheck">
+                                    <i class="bi bi-lock-fill me-1"></i> Protect location with password
+                                </label>
+                            </div>
+                            <div class="collapse mt-3" id="passwordBlock">
+                                <input type="password" class="form-control" name="password" placeholder="Enter password">
+                                <div class="form-text text-muted small">
+                                    Others will need this password to see the location. You (the author) will always see it.
+                                </div>
                             </div>
                         </div>
 

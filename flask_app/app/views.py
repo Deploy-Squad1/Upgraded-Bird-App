@@ -8,8 +8,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 import hashlib
 
+
 def get_ip_hash(ip_address):
     return hashlib.sha256(ip_address.encode('utf-8')).hexdigest()
+
 
 @app.before_request
 def check_ip_allowed():
@@ -19,8 +21,8 @@ def check_ip_allowed():
         banned_ip = Banned_IP.query.filter_by(ip_hash=ip_hash).first()
         if banned_ip:
             return redirect('https://protocol.ua/ua/kriminalniy_kodeks_ukraini_stattya_248/')
-    redirect(url_for('index'))
-    
+    return None
+
 
 @app.route('/')
 def index():
@@ -29,6 +31,7 @@ def index():
     except:
         images = []
     return render_template('index.html', images=images)
+
 
 @app.route('/health')
 def health():
@@ -54,6 +57,7 @@ def register():
         return redirect(url_for('index'))
 
     return render_template('register.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -87,16 +91,31 @@ def upload():
         file = request.files['file']
         bird_name = request.form.get('bird_name')
         location = request.form.get('location')
+        protect = request.form.get('protect_location') == 'on'
+        password = request.form.get('password') if protect else None
 
         if file.filename == '' or not bird_name or not location:
             flash('All fields are required!')
+            return redirect(request.url)
+
+        if protect and not password:
+            flash('Password is required when protection is enabled')
             return redirect(request.url)
 
         if file:
             filename = secure_filename(file.filename)
             unique_filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
-            new_image = Image(filename=unique_filename, bird_name=bird_name, location=location, author=current_user)
+
+            password_hash = generate_password_hash(password) if password else None
+
+            new_image = Image(
+                filename=unique_filename,
+                bird_name=bird_name,
+                location=location,
+                password_hash=password_hash,
+                author=current_user
+            )
             db.session.add(new_image)
             db.session.commit()
 
@@ -104,6 +123,28 @@ def upload():
 
     return render_template('upload.html')
 
+
+@app.route('/reveal/<int:image_id>', methods=['POST'])
+def reveal_location(image_id):
+    image = Image.query.get_or_404(image_id)
+    if not current_user.is_authenticated:
+        flash('You need to be logged in to reveal the location')
+        return redirect(url_for('login'))
+    if current_user.is_authenticated and image.author == current_user:
+        flash(f"Location: {image.location}", "success")
+        return redirect(url_for('index'))
+
+    password_attempt = request.form.get('password_attempt')
+    if not password_attempt:
+        flash('Password is required')
+        return redirect(url_for('index'))
+
+    if image.password_hash and check_password_hash(image.password_hash, password_attempt):
+        flash(f"Location: {image.location}", "success")
+    else:
+        flash('Wrong password!')
+
+    return redirect(url_for('index'))
 
 
 @app.route('/delete/<int:image_id>', methods=['POST'])
@@ -124,13 +165,13 @@ def delete_image(image_id):
 @login_required
 def like_image(image_id):
     image = Image.query.get_or_404(image_id)
-    if (image in current_user.liked_pictures):
+    if image in current_user.liked_pictures:
         image.likes.remove(current_user)
-        db.session.commit()
     else:
         image.likes.append(current_user)
-        db.session.commit()
+    db.session.commit()
     return redirect(url_for('index'))
+
 
 @app.route('/admin')
 @login_required
@@ -139,6 +180,7 @@ def admin_panel():
         banned_ips = Banned_IP.query.all()
         return render_template('admin.html', banned_ips=banned_ips)
     return "You are not supposed to be here", 403
+
 
 @app.route('/report', methods=['POST'])
 @login_required
@@ -151,13 +193,14 @@ def add_banned_IP():
         ip_hash = get_ip_hash(ip_to_ban)
         if Banned_IP.query.filter_by(ip_hash=ip_hash).first():
             flash('This IP is already banned!')
-            return redirect(url_for('admin_panel'))
         else:
             new_ban = Banned_IP(ip_hash=ip_hash)
             db.session.add(new_ban)
             db.session.commit()
             flash('The IP has been banned')
         return redirect(url_for('admin_panel'))
+    return "You are not supposed to be here", 403
+
 
 @app.route('/unban', methods=['POST'])
 @login_required
@@ -177,6 +220,7 @@ def remove_banned_IP():
             flash("This IP is already unbanned or was never banned")
         return redirect(url_for('admin_panel'))
     return "You are not supposed to be here", 403
+
 
 @app.route('/health')
 def health_check():

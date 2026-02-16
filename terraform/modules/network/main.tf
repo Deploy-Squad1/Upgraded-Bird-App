@@ -75,3 +75,8 @@ resource "aws_route_table" "private_subnet" {
     Name = "${var.env}-${var.project}-private-subnet-route-table"
   }
 }
+
+resource "aws_route_table_association" "private_route_table_assosiation" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private_subnet.id
+}

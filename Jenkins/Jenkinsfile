@@ -41,6 +41,9 @@ pipeline {
 
 			  echo "Deploying Consul"
 			  ansible-playbook ansible/consul.yaml \$COMMON_ARGS -f1
+
+			  echo "Deploying Monitoring"
+			  ansible-playbook ansible/monitoring.yaml \$COMMON_ARGS -f1
                         """
                 }
             }

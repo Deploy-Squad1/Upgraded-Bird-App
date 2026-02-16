@@ -23,8 +23,6 @@ resource "aws_instance" "lb" {
 locals{
    private_instances = {
     Jenkins = "jenkins"
-    App1 = "app"
-    App2 = "app"
     Database = "database"
     Consul = "consul"
   }
@@ -41,5 +39,57 @@ resource "aws_instance" "instances" {
   tags = {
     Name = each.key
     Role = each.value
+  }
+}
+
+
+resource "aws_launch_template" "app_lt" {
+  name_prefix   = "app-lt-"
+
+  image_id      = "ami-01041c3d1d454088c"
+
+  instance_type = "t3.micro"
+  key_name      = "ansible_key"
+
+
+  vpc_security_group_ids = [aws_security_group.private_sg.id]
+  iam_instance_profile {
+    name = "ssm-profile"
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_group" "app_asg" {
+  name                = "app-asg"
+  desired_capacity    = 2
+  max_size            = 3
+  min_size            = 1
+
+  vpc_zone_identifier = [aws_subnet.private.id]
+
+  launch_template {
+    id      = aws_launch_template.app_lt.id
+    version = "$Latest"
+  }
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50
+    }
+  }
+
+  tag {
+    key                 = "Role"
+    value               = "app"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "App-ASG-Node"
+    propagate_at_launch = true
   }
 }

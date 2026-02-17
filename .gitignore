@@ -12,4 +12,7 @@ flask_app/app/static/uploads/*
 *.tfstate
 *.tfstate.*
 *.tfstate.backup
+.terraform.lock.hcl
+
+*_ansible_key
 ansible_key

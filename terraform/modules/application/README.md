@@ -15,7 +15,7 @@ module "example" {
     ]
 }
 ```
-*See the `variables.tf` file to see input variables needed to be defined*
+*See the `variables.tf` file to see input variables that need to be defined*
 
 
 The module supplies:
@@ -26,3 +26,6 @@ The module supplies:
 - ssm profile: This enables connection over AWS Systems Manager.
 You will be able to connect to an instance using AWS CLI:
 `aws ssm start-session --target instance-id`
+
+To further configure the machines, you will need to log in to the Jenkins web interface.
+Use `aws ssm start-session --target id_of_jenkins_machine --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["8080"],"localPortNumber":["9999"]}` to forward the Jenkins 8080 port to a chosen (e.g., 9999) port on your machine.

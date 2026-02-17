@@ -36,7 +36,7 @@ resource "aws_instance" "private_instances" {
 
 resource "aws_launch_template" "app" {
   name                   = "${var.env}-${var.project}-app-lt"
-  image_id               = var.ami_id
+  image_id               = var.app_ami_id
   instance_type          = var.app_instance_type
   key_name               = aws_key_pair.ansible_key.key_name
   vpc_security_group_ids = [aws_security_group.internal_services.id]
@@ -78,6 +78,12 @@ resource "aws_autoscaling_group" "app" {
   tag {
     key                 = "Name"
     value               = "${var.env}-${var.project}-App-ASG-Node"
+    propagate_at_launch = true
+  }
+
+  tag {
+    key                 = "Environment"
+    value               = var.env
     propagate_at_launch = true
   }
 }

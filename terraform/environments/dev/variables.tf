@@ -38,6 +38,11 @@ variable "app_instance_type" {
   type        = string
 }
 
+variable "app_ami_id" {
+  description = "AMI of EC2 Instances in the Auto Scaling group"
+  type        = string
+}
+
 variable "asg_desired_capacity" {
   description = "The desired number of EC2 Instances in the Auto Scaling group"
   type        = number

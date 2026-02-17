@@ -70,6 +70,24 @@ resource "aws_vpc_security_group_ingress_rule" "loadbalancer_allow_ssh" {
   to_port                      = 22
 }
 
+resource "aws_vpc_security_group_ingress_rule" "loadbalancer_allow_node_exporter" {
+  description                  = "Allow inbound traffic for Node Exporter"
+  security_group_id            = aws_security_group.loadbalancer.id
+  referenced_security_group_id = aws_security_group.internal_services.id
+  from_port                    = 9100
+  ip_protocol                  = "tcp"
+  to_port                      = 9100
+}
+
+resource "aws_vpc_security_group_ingress_rule" "loadbalancer_allow_prometheus" {
+  description                  = "Allow inbound traffic for Prometheus"
+  security_group_id            = aws_security_group.loadbalancer.id
+  referenced_security_group_id = aws_security_group.internal_services.id
+  from_port                    = 8500
+  ip_protocol                  = "tcp"
+  to_port                      = 8500
+}
+
 resource "aws_vpc_security_group_egress_rule" "loadbalancer_allow_all_traffic_ipv4" {
   description       = "Allow all outbound traffic"
   security_group_id = aws_security_group.loadbalancer.id
@@ -95,6 +113,15 @@ resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_self" {
   ip_protocol                  = "-1"
 }
 
+resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_loadbalancer_http_tcp" {
+  description                  = "Allow HTTP traffic from loadbalancer"
+  security_group_id            = aws_security_group.internal_services.id
+  referenced_security_group_id = aws_security_group.loadbalancer.id
+  from_port                    = 5000
+  ip_protocol                  = "tcp"
+  to_port                      = 5000
+}
+
 resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_consul_dns_tcp" {
   description                  = "Allow inbound traffic for Consul DNS server (TCP)"
   security_group_id            = aws_security_group.internal_services.id
@@ -111,6 +138,33 @@ resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_consul_d
   from_port                    = 8600
   ip_protocol                  = "udp"
   to_port                      = 8600
+}
+
+resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_consul_rpc" {
+  description                  = "Allow Consul internal communication from loadbalancer"
+  security_group_id            = aws_security_group.internal_services.id
+  referenced_security_group_id = aws_security_group.loadbalancer.id
+  from_port                    = 8300
+  to_port                      = 8300
+  ip_protocol                  = "tcp"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_service_discovery_tcp" {
+  description                  = "Allow service discovery traffic from loadbalancer (TCP)"
+  security_group_id            = aws_security_group.internal_services.id
+  referenced_security_group_id = aws_security_group.loadbalancer.id
+  from_port                    = 8301
+  ip_protocol                  = "tcp"
+  to_port                      = 8301
+}
+
+resource "aws_vpc_security_group_ingress_rule" "internal_services_allow_service_discovery_udp" {
+  description                  = "Allow service discovery traffic from loadbalancer (UDP)"
+  security_group_id            = aws_security_group.internal_services.id
+  referenced_security_group_id = aws_security_group.loadbalancer.id
+  from_port                    = 8301
+  ip_protocol                  = "udp"
+  to_port                      = 8301
 }
 
 resource "aws_vpc_security_group_egress_rule" "internal_services_allow_all_traffic_ipv4" {

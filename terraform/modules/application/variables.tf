@@ -53,6 +53,11 @@ variable "asg_max_size" {
   type        = number
 }
 
+variable "app_ami_id" {
+  description = "AMI of EC2 Instances in the Auto Scaling group"
+  type        = string
+}
+
 variable "private_instances" {
   description = "Configuration of all the other EC2 instances. Role tag is created for further Ansible configuration"
   type = map(object({

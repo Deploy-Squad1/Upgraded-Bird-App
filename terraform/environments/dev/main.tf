@@ -34,4 +34,5 @@ module "instances" {
   asg_desired_capacity       = var.asg_desired_capacity
   asg_min_size               = var.asg_min_size
   asg_max_size               = var.asg_max_size
+  app_ami_id                 = var.app_ami_id
 }

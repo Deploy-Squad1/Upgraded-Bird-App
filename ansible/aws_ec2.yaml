@@ -4,6 +4,9 @@ aws_profile: default
 regions:
   - eu-north-1
 
+filters:
+  tag:Name: "*birdwatching*"
+
 groups:
   loadbalancer: "'loadbalancer' in tags.Role"
   database: "'database' in tags.Role"

@@ -15,6 +15,8 @@ def get_ip_hash(ip_address):
 
 @app.before_request
 def check_ip_allowed():
+    if request.path == '/health':
+        return None
     ip = request.remote_addr
     ip = request.headers.get('X-Forwarded-For', ip).split(',')[0].strip()
     if ip:

@@ -102,12 +102,14 @@
     </div>
 </div>
 
+{% if secret_society_url %}
 <a class="secret-jump"
-   href="https://secret-society.example"
-   target="_blank"
-   rel="noopener noreferrer"
-   title="Secret Society"
-   aria-label="Secret Society">
+    href="{{ secret_society_url }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Secret Society"
+    aria-label="Secret Society">
     SS
 </a>
+{% endif %}
 {% endblock %}

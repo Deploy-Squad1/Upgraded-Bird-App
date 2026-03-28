@@ -9,6 +9,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(basedir, 'app/static/uploads')
+    SECRET_SOCIETY_URL = os.environ.get('SECRET_SOCIETY_URL')
     
     @staticmethod
     def init_app(app):

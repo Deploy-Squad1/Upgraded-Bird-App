@@ -1,0 +1,26 @@
+.secret-jump {
+	position: fixed;
+	right: 12px;
+	bottom: 10px;
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	text-decoration: none;
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: #f8f9fa;
+	background: radial-gradient(circle at 30% 30%, #9aa0a6 0 10%, #1f2328 75%);
+	opacity: 0.05;
+	z-index: 20;
+	transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.secret-jump:hover,
+.secret-jump:focus-visible {
+	opacity: 0.85;
+	transform: scale(1.05);
+}

@@ -101,4 +101,14 @@
 
     </div>
 </div>
+
+{% if secret_society_url %}
+<a class="secret-jump"
+    href="{{ secret_society_url }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Secret Society"
+    aria-label="Secret Society">
+</a>
+{% endif %}
 {% endblock %}

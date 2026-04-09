@@ -1,3 +1,4 @@
+// 1. BirdWatching App Deployment Pipeline 
 pipelineJob('ansible-deploy-pipeline') {
     definition {
         cpsScm {
@@ -11,6 +12,24 @@ pipelineJob('ansible-deploy-pipeline') {
                 }
             }
             scriptPath('Jenkins/Jenkinsfile')
+        }
+    }
+}
+
+// 2. SecretSociety Helm Charts Deployment Pipeline
+pipelineJob('eks-helm-deploy') {
+    definition {
+        cpsScm {
+            scm {
+                git {
+                    remote {
+                        url('git@github.com:Deploy-Squad1/SecretSocietyHelmCharts.git')
+                        credentials('github-key')
+                    }
+                    branch('main')
+                }
+            }
+            scriptPath('Jenkinsfile') 
         }
     }
 }

@@ -173,3 +173,22 @@ resource "aws_vpc_security_group_egress_rule" "internal_services_allow_all_traff
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1" # semantically equivalent to all ports
 }
+
+resource "aws_security_group" "jenkins-peering" {
+  name        = "jenkins-peering-sg"
+  description = "Allow administrative access from Jenkins"
+  vpc_id      = var.vpc_id
+
+  tags = {
+    Name = "${var.env}-${var.project}-jenkins-peering-sg"
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "allow_jenkins_ssh" {
+  security_group_id = aws_security_group.jenkins-peering.id
+  description       = "SSH access from Jenkins"
+  cidr_ipv4         = "${var.jenkins_private_ip}/32"
+  from_port         = 22
+  ip_protocol       = "tcp"
+  to_port           = 22
+}

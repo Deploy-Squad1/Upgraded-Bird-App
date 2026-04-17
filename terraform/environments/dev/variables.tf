@@ -66,3 +66,7 @@ variable "private_instances" {
     instance_type = string
   }))
 }
+variable "jenkins_private_ip" {
+  type        = string
+  description = "Private IP of the Jenkins server for management access"
+} 

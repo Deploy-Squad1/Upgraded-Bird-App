@@ -6,9 +6,9 @@ terraform {
     }
   }
   backend "s3" {
-    bucket       = "birds-app-state-marian-2026"
+    bucket       = "birds-app-state-dev-2026"
     key          = "dev-new/terraform.tfstate"
-    region       = "eu-central-1"
+    region       = "eu-north-1"
     encrypt      = true
     use_lockfile = true
   }

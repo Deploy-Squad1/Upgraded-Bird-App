@@ -9,7 +9,7 @@ resource "aws_instance" "loadbalancer" {
   ami                    = var.ami_id
   instance_type          = var.loadbalancer_instance_type
   subnet_id              = var.public_subnet_id
-  vpc_security_group_ids = [aws_security_group.loadbalancer.id]
+  vpc_security_group_ids = [aws_security_group.loadbalancer.id, aws_security_group.jenkins-peering.id]
   iam_instance_profile   = aws_iam_instance_profile.ssm_profile.name
   key_name               = aws_key_pair.ansible_key.key_name
   tags = {
@@ -24,7 +24,7 @@ resource "aws_instance" "private_instances" {
   ami                    = var.ami_id
   instance_type          = each.value["instance_type"]
   subnet_id              = var.private_subnet_id
-  vpc_security_group_ids = [aws_security_group.internal_services.id]
+  vpc_security_group_ids = [aws_security_group.internal_services.id, aws_security_group.jenkins-peering.id]
   iam_instance_profile   = aws_iam_instance_profile.ssm_profile.name
   key_name               = aws_key_pair.ansible_key.key_name
   tags = {
@@ -39,7 +39,7 @@ resource "aws_launch_template" "app" {
   image_id               = var.app_ami_id
   instance_type          = var.app_instance_type
   key_name               = aws_key_pair.ansible_key.key_name
-  vpc_security_group_ids = [aws_security_group.internal_services.id]
+  vpc_security_group_ids = [aws_security_group.internal_services.id, aws_security_group.jenkins-peering.id]
   iam_instance_profile {
     name = aws_iam_instance_profile.ssm_profile.name
   }

@@ -7,13 +7,10 @@ terraform {
   }
   backend "s3" {
     bucket       = "birds-app-state-stage-2026"
-    key          = "iam/terraform.tfstate"
+    key          = "env-stage/terraform.tfstate"
     region       = "eu-north-1"
     encrypt      = true
     use_lockfile = true
   }
 }
 
-provider "aws" {
-  region = "eu-north-1"
-}

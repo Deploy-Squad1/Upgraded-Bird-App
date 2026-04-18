@@ -1,7 +1,7 @@
 
 server {
 
-    server_name bird-gallery.pp.ua www.bird-gallery.pp.ua;
+    server_name {{ domain_name }} www.{{ domain_name }};
     resolver 127.0.0.1:8600 valid=5s;
 
     location / {
@@ -15,8 +15,8 @@ server {
     }
 
     listen 443 ssl; # managed by Certbot
-    ssl_certificate /etc/letsencrypt/live/bird-gallery.pp.ua/fullchain.pem; # managed by Certbot
-    ssl_certificate_key /etc/letsencrypt/live/bird-gallery.pp.ua/privkey.pem; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/{{ domain_name }}/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain_name }}/privkey.pem; # managed by Certbot
     include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
 
@@ -24,22 +24,19 @@ server {
 }
 
 server {
-    if ($host = www.bird-gallery.pp.ua) {
+    if ($host = www.{{ domain_name }}) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
 
-    if ($host = bird-gallery.pp.ua) {
+    if ($host = {{ domain_name }}) {
         return 301 https://$host$request_uri;
     } # managed by Certbot
 
 
     listen 80;
 
-    server_name bird-gallery.pp.ua www.bird-gallery.pp.ua;
+    server_name {{ domain_name }} www.{{ domain_name }};
     return 404; # managed by Certbot
 
-
-
- 
 }

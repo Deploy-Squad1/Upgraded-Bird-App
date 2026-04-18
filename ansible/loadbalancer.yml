@@ -12,7 +12,7 @@
 
   - name: Copy nginx loadbalancer config
     ansible.builtin.template:
-      src: files/lb_nginx.conf
+      src: files/lb_nginx.conf.j2
       dest: /etc/nginx/sites-available/lb_nginx.conf
     notify: Reload nginx
 

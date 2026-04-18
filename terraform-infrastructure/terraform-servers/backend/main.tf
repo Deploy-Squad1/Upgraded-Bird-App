@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "birds-app-state-marian-2026"
+  bucket = "birds-app-state-stage-2026"
   lifecycle {
     prevent_destroy = true
   }

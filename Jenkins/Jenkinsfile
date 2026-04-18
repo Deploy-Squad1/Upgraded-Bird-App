@@ -25,6 +25,7 @@ pipeline {
                         sh """
 
 			  COMMON_ARGS="-i ansible/aws_ec2.yaml -u ubuntu --private-key ${SSH_KEY} \
+                          -e domain_name=${env.DOMAIN_NAME} \
                           -e database_user=${DB_USER} \
                           -e database_password=${DB_PASS} \
                           -e git_key=${GH_KEY} \

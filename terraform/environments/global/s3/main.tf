@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "birds-app-state-marian-2026"
+  bucket = "birds-app-state-stage-2026"
   lifecycle {
     prevent_destroy = true
   }
@@ -11,7 +11,7 @@ resource "aws_s3_bucket_versioning" "versioning" {
   }
 }
 resource "aws_s3_bucket" "image_uploads" {
-  bucket = "bird-app-uploads"
+  bucket = "bird-app-uploads-stage-2026"
 }
 
 resource "aws_s3_bucket_public_access_block" "allow_public_access" {

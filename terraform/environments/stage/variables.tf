@@ -8,23 +8,23 @@ variable "project" {
   type        = string
 }
 
-variable "ami_id" {
-  description = "Amazon Machine Image used by all provided EC2 instances"
+variable "vpc_cidr_block" {
+  description = "IPv4 address range for the VPC"
   type        = string
 }
 
-variable "vpc_id" {
-  description = "ID of the VPC that hosts the public and the private subnet"
+variable "public_subnet_cidr_block" {
+  description = "IPv4 address range for the public subnet"
   type        = string
 }
 
-variable "public_subnet_id" {
-  description = "ID of the public subnet. Load balancer is deployed in the public subnet"
+variable "private_subnet_cidr_block" {
+  description = "IPv4 address range for the private subnet"
   type        = string
 }
 
-variable "private_subnet_id" {
-  description = "ID of the private subnet. The services like application server, database, Consul are deployed in the private subnet"
+variable "availability_zone" {
+  description = "Availability zone where subnets are created"
   type        = string
 }
 
@@ -35,6 +35,11 @@ variable "loadbalancer_instance_type" {
 
 variable "app_instance_type" {
   description = "Instance type of the EC2s that host the flask application (deployed as an Auto Scaling group)"
+  type        = string
+}
+
+variable "app_ami_id" {
+  description = "AMI of EC2 Instances in the Auto Scaling group"
   type        = string
 }
 
@@ -53,16 +58,6 @@ variable "asg_max_size" {
   type        = number
 }
 
-variable "app_ami_id" {
-  description = "AMI of EC2 Instances in the Auto Scaling group"
-  type        = string
-}
-
-variable "jenkins_private_ip" {
-  type        = string
-  description = "Private IP of the Jenkins server for management access"
-}
-
 variable "private_instances" {
   description = "Configuration of all the other EC2 instances. Role tag is created for further Ansible configuration"
   type = map(object({
@@ -70,22 +65,9 @@ variable "private_instances" {
     role          = string
     instance_type = string
   }))
+}
 
-  default = {
-    jenkins = {
-      name          = "jenkins"
-      role          = "jenkins"
-      instance_type = "t3.small"
-    }
-    consul = {
-      name          = "consul"
-      role          = "consul"
-      instance_type = "t3.micro"
-    }
-    database = {
-      name          = "database"
-      role          = "database"
-      instance_type = "t3.micro"
-    }
-  }
+variable "jenkins_private_ip" {
+  type        = string
+  description = "Private IP of the Jenkins server for management access"
 }
